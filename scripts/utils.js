@@ -17,6 +17,15 @@ export default class utils {
     getXp(player, xpType) {
         return player.getDynamicProperty(xpType);
     }
+    addLvl(player, amount, lvlType) {
+        player.setDynamicProperty(lvlType, this.getLvl(player, lvlType) + amount);
+    }
+    getLvl(player, lvlType) {
+        return player.getDynamicProperty(lvlType);
+    }
+    removeLvl(player, amount, lvlType) {
+        player.setDynamicProperty(lvlType, this.getLvl(player, lvlType) - amount);
+    }
     getObjXpOnPlace(type) {
         for (const block of blocks) {
             for (const key in block) {
@@ -37,22 +46,20 @@ export default class utils {
         }
         return 0;
     }
-    getPyLvl(player, xpType) {
-        const Xp = this.getXp(player, "MiningXp");
-        let mngLvl = 1;
-        for (const lvlData of MiningLvl) {
-            if (lvlData[mngLvl] && Xp >= lvlData[mngLvl].MiningXp) {
-                mngLvl++;
-                return this.overworld.runCommandAsync(`title ${player.name} actionbar Mining Increase To ${mngLvl}`);
+    getLvll(player, xpType) {
+        const xp = this.getXp(player, xpType);
+        let Lvl = this.getLvl(player, "MiningLvl");
+        for (const lvl of MiningLvl) {
+            if (lvl[Lvl] && xp >= lvl[Lvl].MiningXp) {
                 break;
             }
             else {
-                break;
+                Lvl = Lvl + 1;
             }
+            return Lvl;
         }
-        return mngLvl;
     }
-    getPlayer(player, xpType) {
+    getPlayers(player, xpType) {
         this.players.forEach((e) => {
             for (let i = 0; i < this.players.length; i++) {
                 if (this.players[i].getDynamicProperty(xpType)) {
@@ -63,6 +70,9 @@ export default class utils {
     }
 }
 export class Block {
+    constructor() {
+        this.overworld = world.getDimension("overworld");
+    }
     onBreak(player, blockType, xpType) {
         const xpAmount = this.CalXpOnBreak(blockType);
         player.setDynamicProperty(xpType, this.getXp(player, xpType) + xpAmount);
@@ -92,7 +102,6 @@ export class Block {
         return 0;
     }
     getXp(player, xpType) {
-        // Your logic to get the player's XP for the specified type
         return player.getDynamicProperty(xpType) || 0;
     }
 }
