@@ -15,20 +15,33 @@ import { Database } from "./data";
 const db = new Database();
 
 world.afterEvents.entitySpawn.subscribe((event) => {
-    if (event.entity instanceof Player) {
-        const player = event.entity;
-        if (!db.has(player, "havepStat")) {
-            pstats.forEach((item) => {
-                db.set(Player, item, 0);
-            });
-        }
-    }
+    console.warn("entity spawned");
 });
 
 world.afterEvents.itemUse.subscribe((event) => {
     const item = event.itemStack;
-    if (item.typeId === "minecraft:compass") {
-        stat(event.source);
+    const source = event.source;
+    if (item.typeId === "minecraft:stick") {
+        pstats.forEach((item) => {
+            console.warn(db.get(source, item));
+        });
+    } else if (item.typeId === "minecraft:compass") {
+        stat(source)
+        // try {
+        //     pstats.forEach((item) => {
+        //         db.set(source, item, 0);
+        //     });
+        //     console.warn("database created for: " + source.name);
+        // } catch (error) {
+        //     console.warn(
+        //         "an error occured while creating the database: " + error
+        //     );
+        // }
+        // if (!db.has(target, "havepStat")) {
+
+        // } else {
+        //     console.warn(JSON.stringify(db.getAll(player)));
+        // }
     }
 });
 

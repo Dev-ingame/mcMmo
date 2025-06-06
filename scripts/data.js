@@ -16,16 +16,23 @@ export class Database {
      */
     get(player, id) {
         try {
-            return player.getDynamicProperty(id)
+            return player.getDynamicProperty(id);
         } catch (error) {
-            return "not found"
-        };
+            return id + " not found";
+        }
     }
     /**
      *
      * @param {Player} player
      */
     has(player, id) {
-        return player.getDynamicPropertyIds().find(id);
+        return  player.getDynamicPropertyIds().find(id) ? true : false 
+    }
+    /**
+     *
+     * @param {Player} player
+     */
+    getAll(player) {
+        return player.getDynamicPropertyIds();
     }
 }

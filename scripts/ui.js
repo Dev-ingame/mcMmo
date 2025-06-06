@@ -9,13 +9,14 @@ const db = new Database();
  * @param {Player} target
  */
 export function stat(target) {
-    new ActionFormData()
-        .title("stat")
-        .body(
-            `${pstats.forEach((item) => {
-                db.get(target, item);
-            })}`
-        )
-        .button("ok")
-        .show(target);
+    const form = new ActionFormData().title("stat");
+
+    let cache = [];
+
+    pstats.forEach((item) => {
+        cache.push({item:[db.get(target,item)]})
+    });
+    form.body(JSON.stringify(cache))
+    form.button("ok");
+    form.show(target);
 }

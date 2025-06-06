@@ -1,4 +1,4 @@
-export const pstats = ["mining", "woodcutting", "herbalism", "excavation"];
+export const pstats = ["havepStat","mining", "woodcutting", "herbalism", "excavation"];
 
 export const miningXPTable = {
     // Stone & similar
