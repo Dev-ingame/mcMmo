@@ -1,16 +1,23 @@
-import { world } from "@minecraft/server";
+import { Container, Player, world } from "@minecraft/server";
 import { sendNotifyActionbar } from "./utils";
 import { stat } from "./ui";
-import { excavationXPTable, fishingXPTable, herbalismXPTable, miningXPTable, woodcuttingXPTable } from "./data";
+import {
+    excavationXPTable,
+    fishingXPTable,
+    herbalismXPTable,
+    miningXPTable,
+    mobXP,
+    woodcuttingXPTable,
+} from "./xpTables";
 
 world.afterEvents.itemUse.subscribe((event) => {
     const item = event.itemStack;
-    console.warn(item.typeId);
     if (item.typeId === "minecraft:compass") {
         stat(event.source);
     }
 });
 
+//Mining
 world.beforeEvents.playerBreakBlock.subscribe((event) => {
     const block = event.block;
     const player = event.player;
@@ -18,24 +25,77 @@ world.beforeEvents.playerBreakBlock.subscribe((event) => {
     const blocktype = block.typeId.toLowerCase().replace("minecraft:", "");
     console.warn(block.typeId);
     if (blocktype in miningXPTable) {
-        console.warn(`blockscore: ${miningXPTable[blocktype]}`);
+        console.warn(`score: ${miningXPTable[blocktype]}`);
         sendNotifyActionbar(player, `+1 Mining Point`);
     } else if (blocktype in woodcuttingXPTable) {
-        console.warn(`blockscore: ${woodcuttingXPTable[blocktype]}`);
+        console.warn(`score: ${woodcuttingXPTable[blocktype]}`);
         sendNotifyActionbar(player, `+1 Wood Cutting Point`);
     } else if (blocktype in excavationXPTable) {
-        console.warn(`blockscore: ${excavationXPTable[blocktype]}`);
+        console.warn(`score: ${excavationXPTable[blocktype]}`);
         sendNotifyActionbar(player, `+1 Excavation Point`);
     } else if (blocktype in herbalismXPTable) {
-        console.warn(`blockscore: ${herbalismXPTable[blocktype]}`);
-        sendNotifyActionbar(player, `+1 Excavation Point`);
-    } else if (blocktype in fishingXPTable){
-        console.warn(`blockscore: ${fishingXPTable[blocktype]}`);
-        sendNotifyActionbar(player, `+1 Excavation Point`);
+        console.warn(`score: ${herbalismXPTable[blocktype]}`);
+        sendNotifyActionbar(player, `+1 Herbalism Point`);
     }
 });
 
-world.afterEvents.entityDie.subscribe(event=>{
-    const target = event.deadEntity
-    const source = event.damageSource
-})
+//combat
+world.afterEvents.entityDie.subscribe((event) => {
+    const source = event.damageSource;
+    const target = event.deadEntity.typeId.replace("minecraft:", "");
+    if (source.damagingEntity instanceof Player) {
+        const player = source.damagingEntity;
+        const player2 = event.deadEntity;
+        /**
+         * @type Container
+         */
+        const container = player.getComponent("minecraft:inventory").container;
+        const itemhand = container.getItem(player.selectedSlotIndex);
+
+        if (target in mobXP) {
+            console.warn(`score: ${mobXP[target]}`);
+            sendNotifyActionbar(player, `+1 Combat Point`);
+        }
+
+        if (!source.damagingProjectile || !itemhand) return;
+        if (!(player2 instanceof Player)) return;
+
+        if (source.damagingProjectile.typeId === "minecraft:arrow") {
+            console.warn("killed by arrow");
+        } else if (itemhand.typeId.includes("sword")) {
+            console.warn("killed by sword");
+        } else if (itemhand.typeId.includes("axe")) {
+            console.warn("killed by axe");
+        } else {
+            console.warn("killed by item")
+        }
+    }
+});
+
+world.afterEvents.entityHurt.subscribe((event) => {
+    const source = event.damageSource;
+    const target = event.hurtEntity;
+
+    if (source.damagingEntity instanceof Player) {
+        const player = source.damagingEntity;
+        const player2 = event.deadEntity;
+        /**
+         * @type Container
+         */
+        const container = player.getComponent("minecraft:inventory").container;
+        const itemhand = container.getItem(player.selectedSlotIndex);
+
+        if (!source.damagingProjectile || !itemhand) return;
+        if (!(player2 instanceof Player)) return;
+
+        if (source.damagingProjectile.typeId === "minecraft:arrow") {
+            console.warn("hit by arrow");
+        } else if (itemhand.typeId.includes("sword")) {
+            console.warn("hit by sword");
+        } else if (itemhand.typeId.includes("axe")) {
+            console.warn("hit by axe");
+        } else {
+            console.warn("hit by item")
+        }
+    }
+});
