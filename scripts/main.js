@@ -7,8 +7,23 @@ import {
     herbalismXPTable,
     miningXPTable,
     mobXP,
+    pstats,
     woodcuttingXPTable,
 } from "./xpTables";
+import { Database } from "./data";
+
+const db = new Database();
+
+world.afterEvents.entitySpawn.subscribe((event) => {
+    if (event.entity instanceof Player) {
+        const player = event.entity;
+        if (!db.has(player, "havepStat")) {
+            pstats.forEach((item) => {
+                db.set(Player, item, 0);
+            });
+        }
+    }
+});
 
 world.afterEvents.itemUse.subscribe((event) => {
     const item = event.itemStack;
@@ -67,7 +82,7 @@ world.afterEvents.entityDie.subscribe((event) => {
         } else if (itemhand.typeId.includes("axe")) {
             console.warn("killed by axe");
         } else {
-            console.warn("killed by item")
+            console.warn("killed by item");
         }
     }
 });
@@ -95,7 +110,7 @@ world.afterEvents.entityHurt.subscribe((event) => {
         } else if (itemhand.typeId.includes("axe")) {
             console.warn("hit by axe");
         } else {
-            console.warn("hit by item")
+            console.warn("hit by item");
         }
     }
 });
