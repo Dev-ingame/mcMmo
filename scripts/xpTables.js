@@ -1,6 +1,26 @@
-export const pstats = ["havepStat","mining", "woodcutting", "herbalism", "excavation"];
+export const pstats = [
+    "havepStat",
+    "mining",
+    "miningcurrentExp",
+    "woodcutting",
+    "woodcuttingcurrenExp",
+    "herbalism",
+    "herbalismcurrentExp",
+    "excavation",
+    "excavationcurrentExp"
+];
 
-export const miningXPTable = {
+export {
+    miningXPTable,
+    woodcuttingXPTable,
+    herbalismXPTable,
+    excavationXPTable,
+    fishingXPTable,
+    combatXPTable,
+    mobXP,
+};
+
+const miningXPTable = {
     // Stone & similar
     stone: 1,
     andesite: 1,
@@ -37,7 +57,7 @@ export const miningXPTable = {
     obsidian: 15,
 };
 
-export const woodcuttingXPTable = {
+const woodcuttingXPTable = {
     // Overworld logs
     oak_log: 10,
     spruce_log: 12,
@@ -61,7 +81,7 @@ export const woodcuttingXPTable = {
     stripped_warped_stem: 15,
 };
 
-export const excavationXPTable = {
+const excavationXPTable = {
     dirt: 1,
     grass_block: 1,
     coarse_dirt: 10,
@@ -78,7 +98,7 @@ export const excavationXPTable = {
     snow_block: 5,
     snow: 2,
 };
-export const herbalismXPTable = {
+const herbalismXPTable = {
     // Crops
     wheat: 10,
     carrots: 10,
@@ -125,7 +145,7 @@ export const herbalismXPTable = {
     vine: 2,
 };
 
-export const fishingXPTable = {
+const fishingXPTable = {
     raw_cod: 10,
     raw_salmon: 10,
     clownfish: 5,
@@ -140,7 +160,7 @@ export const fishingXPTable = {
 };
 
 //Pvp
-export const combatXPTable = {
+const combatXPTable = {
     // Swords
     hit_swords: 6,
     kill_swords: 18,
@@ -162,7 +182,7 @@ export const combatXPTable = {
     kill_with_tamed: 18,
 };
 
-export const mobXP = {
+const mobXP = {
     // Passive mobs (lower XP)
     cow: 10,
     pig: 10,

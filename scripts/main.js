@@ -1,5 +1,5 @@
 import { Container, Player, world } from "@minecraft/server";
-import { sendNotifyActionbar } from "./utils";
+import { drawXPBar, getXPForLevel, sendNotifyActionbar } from "./utils";
 import { stat } from "./ui";
 import {
     excavationXPTable,
@@ -14,9 +14,9 @@ import { Database } from "./data";
 
 const db = new Database();
 
-world.afterEvents.entitySpawn.subscribe((event) => {
-    console.warn("entity spawned");
-});
+// world.afterEvents.entitySpawn.subscribe((event) => {
+//     console.warn("entity spawned");
+// });
 
 world.afterEvents.itemUse.subscribe((event) => {
     const item = event.itemStack;
@@ -25,45 +25,87 @@ world.afterEvents.itemUse.subscribe((event) => {
         pstats.forEach((item) => {
             console.warn(db.get(source, item));
         });
+    } else if (item.typeId === "minecraft:blaze_rod") {
+        try {
+            pstats.forEach((item) => {
+                db.set(source, item, 0);
+            });
+            console.warn("db.created");
+        } catch (error) {
+            console.warn(error);
+        }
     } else if (item.typeId === "minecraft:compass") {
-        stat(source)
-        // try {
-        //     pstats.forEach((item) => {
-        //         db.set(source, item, 0);
-        //     });
-        //     console.warn("database created for: " + source.name);
-        // } catch (error) {
-        //     console.warn(
-        //         "an error occured while creating the database: " + error
-        //     );
-        // }
-        // if (!db.has(target, "havepStat")) {
-
-        // } else {
-        //     console.warn(JSON.stringify(db.getAll(player)));
+        stat(source);
+        // sendNotifyActionbar(source, `${getXPForLevel(1)}`)
+        // for (let i = 0; i < 100; i++) {
+        //     source.sendMessage(`${getXPForLevel(i)}`);
         // }
     }
 });
 
+//tf am  i doing
 //Mining
 world.beforeEvents.playerBreakBlock.subscribe((event) => {
     const block = event.block;
     const player = event.player;
 
     const blocktype = block.typeId.toLowerCase().replace("minecraft:", "");
-    console.warn(block.typeId);
-    if (blocktype in miningXPTable) {
-        console.warn(`score: ${miningXPTable[blocktype]}`);
-        sendNotifyActionbar(player, `+1 Mining Point`);
-    } else if (blocktype in woodcuttingXPTable) {
-        console.warn(`score: ${woodcuttingXPTable[blocktype]}`);
-        sendNotifyActionbar(player, `+1 Wood Cutting Point`);
-    } else if (blocktype in excavationXPTable) {
-        console.warn(`score: ${excavationXPTable[blocktype]}`);
-        sendNotifyActionbar(player, `+1 Excavation Point`);
-    } else if (blocktype in herbalismXPTable) {
-        console.warn(`score: ${herbalismXPTable[blocktype]}`);
-        sendNotifyActionbar(player, `+1 Herbalism Point`);
+
+    const miningcurrentxp = db.get(player, "miningcurrentExp");
+    const mininglvl = db.get(player, "mining");
+
+    /**
+     * @type Container
+     */
+    const container = player.getComponent("minecraft:inventory").container;
+    const itemhand = container.getItem(player.selectedSlotIndex);
+
+    if (!itemhand) return;
+    if (itemhand.typeId.includes("pickaxe")) {
+        if (blocktype in miningXPTable) {
+            db.set(
+                player,
+                "miningcurrentExp",
+                miningcurrentxp + miningXPTable[blocktype]
+            );
+
+            if (miningcurrentxp >= getXPForLevel(mininglvl)) {
+                db.set(player, "miningcurrentExp", 0);
+                db.set(player, "mining", mininglvl + 1);
+                player.sendMessage(
+                    `Mining: ${mininglvl} => ${
+                        mininglvl + 1
+                    }`
+                );
+            }
+            // player.sendMessage(`${miningcurrentxp} : ${getXPForLevel(mininglvl)}`)
+            sendNotifyActionbar(
+                player,
+                drawXPBar(miningcurrentxp, getXPForLevel(mininglvl))
+            );
+        }
+    } else if (itemhand.typeId.includes("axe")) {
+        if (blocktype in miningXPTable) {
+            sendNotifyActionbar(
+                player,
+                `+${woodcuttingXPTable[blocktype]}Wood Cutting Exp`
+            );
+        }
+    } else if (itemhand.typeId.includes("shovel")) {
+        if (blocktype in excavationXPTable) {
+            console.warn(`score: ${excavationXPTable[blocktype]}`);
+            sendNotifyActionbar(
+                player,
+                `+${excavationXPTable[blocktype]} Excavation Exp`
+            );
+        }
+    } else if (itemhand.typeId.includes("hoe")) {
+        if (blocktype in herbalismXPTable) {
+            sendNotifyActionbar(
+                player,
+                `+${herbalismXPTable[blocktype]} Herbalism Exp`
+            );
+        }
     }
 });
 
