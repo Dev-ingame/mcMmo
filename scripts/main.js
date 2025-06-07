@@ -14,6 +14,47 @@ import { Database } from "./data";
 
 const db = new Database();
 
+const skillHandlers = {
+    pickaxe: {
+        skill: "mining",
+        table: miningXPTable,
+    },
+    axe: {
+        skill: "woodcutting",
+        table: woodcuttingXPTable,
+    },
+    shovel: {
+        skill: "excavation",
+        table: excavationXPTable,
+    },
+    hoe: {
+        skill: "herbalism",
+        table: herbalismXPTable,
+    },
+};
+
+function handleSkillXP(player, skill, blocktype, table, toolXPKey) {
+    const currentXP = db.get(player, `${skill}currentExp`);
+    const level = db.get(player, skill);
+
+    const gainedXP = table[blocktype];
+    if (!gainedXP) return;
+
+    db.set(player, `${skill}currentExp`, currentXP + gainedXP);
+
+    if (currentXP >= getXPForLevel(level)) {
+        db.set(player, `${skill}currentExp`, 0);
+        db.set(player, skill, level + 1);
+        player.sendMessage(
+            `${skill.charAt(0).toUpperCase() + skill.slice(1)}: ${level} => ${
+                level + 1
+            }`
+        );
+    }
+
+    sendNotifyActionbar(player, drawXPBar(currentXP, getXPForLevel(level)));
+}
+
 // world.afterEvents.entitySpawn.subscribe((event) => {
 //     console.warn("entity spawned");
 // });
@@ -51,9 +92,6 @@ world.beforeEvents.playerBreakBlock.subscribe((event) => {
 
     const blocktype = block.typeId.toLowerCase().replace("minecraft:", "");
 
-    const miningcurrentxp = db.get(player, "miningcurrentExp");
-    const mininglvl = db.get(player, "mining");
-
     /**
      * @type Container
      */
@@ -61,50 +99,18 @@ world.beforeEvents.playerBreakBlock.subscribe((event) => {
     const itemhand = container.getItem(player.selectedSlotIndex);
 
     if (!itemhand) return;
-    if (itemhand.typeId.includes("pickaxe")) {
-        if (blocktype in miningXPTable) {
-            db.set(
-                player,
-                "miningcurrentExp",
-                miningcurrentxp + miningXPTable[blocktype]
-            );
+    for (const tool in skillHandlers) {
+        if (itemhand.typeId.includes(tool)) {
+            const { skill, table, notifyOnly } = skillHandlers[tool];
+            const gainedXP = table[blocktype];
+            if (!gainedXP) return;
 
-            if (miningcurrentxp >= getXPForLevel(mininglvl)) {
-                db.set(player, "miningcurrentExp", 0);
-                db.set(player, "mining", mininglvl + 1);
-                player.sendMessage(
-                    `Mining: ${mininglvl} => ${
-                        mininglvl + 1
-                    }`
-                );
+            if (notifyOnly) {
+                sendNotifyActionbar(player, `+${gainedXP} ${skill} Exp`);
+            } else {
+                handleSkillXP(player, skill, blocktype, table);
             }
-            // player.sendMessage(`${miningcurrentxp} : ${getXPForLevel(mininglvl)}`)
-            sendNotifyActionbar(
-                player,
-                drawXPBar(miningcurrentxp, getXPForLevel(mininglvl))
-            );
-        }
-    } else if (itemhand.typeId.includes("axe")) {
-        if (blocktype in miningXPTable) {
-            sendNotifyActionbar(
-                player,
-                `+${woodcuttingXPTable[blocktype]}Wood Cutting Exp`
-            );
-        }
-    } else if (itemhand.typeId.includes("shovel")) {
-        if (blocktype in excavationXPTable) {
-            console.warn(`score: ${excavationXPTable[blocktype]}`);
-            sendNotifyActionbar(
-                player,
-                `+${excavationXPTable[blocktype]} Excavation Exp`
-            );
-        }
-    } else if (itemhand.typeId.includes("hoe")) {
-        if (blocktype in herbalismXPTable) {
-            sendNotifyActionbar(
-                player,
-                `+${herbalismXPTable[blocktype]} Herbalism Exp`
-            );
+            break;
         }
     }
 });

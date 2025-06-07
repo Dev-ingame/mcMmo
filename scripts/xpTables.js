@@ -3,12 +3,14 @@ export const pstats = [
     "mining",
     "miningcurrentExp",
     "woodcutting",
-    "woodcuttingcurrenExp",
+    "woodcuttingcurrentExp",
     "herbalism",
     "herbalismcurrentExp",
     "excavation",
     "excavationcurrentExp"
 ];
+
+
 
 export {
     miningXPTable,
