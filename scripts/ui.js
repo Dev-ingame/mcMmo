@@ -4,19 +4,22 @@ import { pstats } from "./xpTables";
 import { Database } from "./data";
 
 const db = new Database();
+
 /**
- *
  * @param {Player} target
  */
 export function stat(target) {
-    const form = new ActionFormData().title("stat");
+    const form = new ActionFormData().title("Stat");
 
-    let cache = [];
+    let cache = "";
 
     pstats.forEach((item) => {
-        cache.push({item:[db.get(target,item)]})
+        const value = db.get(target, item);
+        cache += `${item}: ${value}\n`;
     });
-    form.body(JSON.stringify(cache))
-    form.button("ok");
-    form.show(target);
+
+    form.body(cache);
+    form.button("OK");
+
+    form.show(target).catch(() => {});
 }
