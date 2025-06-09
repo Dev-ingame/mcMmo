@@ -11,8 +11,9 @@ function sendNotifyActionbar(target = world, rawtext) {
 }
 
 function getXPForLevel(level) {
-    return Math.floor(120 + 20 * level + 10 * level ** 1.5);
+  return Math.floor(100 * Math.pow(1.1, level));
 }
+
 
 function drawXPBar(prefix = "", currentXP, requiredXP, width = 20, suffix ='') {
     const percent = Math.min(currentXP / requiredXP, 1);
