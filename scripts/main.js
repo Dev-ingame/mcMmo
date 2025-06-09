@@ -2,6 +2,7 @@ import { Container, Player, world } from "@minecraft/server";
 import { drawXPBar, getXPForLevel, sendNotifyActionbar } from "./utils";
 import { stat } from "./ui";
 import {
+    combatXPTable,
     excavationXPTable,
     fishingXPTable,
     herbalismXPTable,
@@ -15,34 +16,44 @@ import { Database } from "./data";
 const db = new Database();
 
 const skillHandlers = {
-    pickaxe: {
-        skill: "mining",
-        table: miningXPTable,
+    gathering: {
+        pickaxe: {
+            skill: "mining",
+            table: miningXPTable,
+        },
+        axe: {
+            skill: "woodcutting",
+            table: woodcuttingXPTable,
+        },
+        shovel: {
+            skill: "excavation",
+            table: excavationXPTable,
+        },
+        hoe: {
+            skill: "herbalism",
+            table: herbalismXPTable,
+        },
     },
-    axe: {
-        skill: "woodcutting",
-        table: woodcuttingXPTable,
-    },
-    shovel: {
-        skill: "excavation",
-        table: excavationXPTable,
-    },
-    hoe: {
-        skill: "herbalism",
-        table: herbalismXPTable,
+
+    combat: {
+        sword: { skill: "sword" },
+        axe: { skill: "axe" },
+        arrow: { skill: "bow" },
+        undefined: { skill: "unarmed" },
     },
 };
 
-function handleSkillXP(player, skill, blocktype, table, toolXPKey) {
-    const currentXP = db.get(player, `${skill}currentExp`);
-    const level = db.get(player, skill);
+function handleSkillXP(player, skill, blocktype, table) {
+    const currentXP = db.get(player, `${skill}currentExp`) ?? 0;
+    const level = db.get(player, skill) ?? 0;
 
     const gainedXP = table[blocktype];
-    if (!gainedXP) return;
+    if (typeof gainedXP !== "number") return;
 
-    db.set(player, `${skill}currentExp`, currentXP + gainedXP);
+    const newXP = currentXP + gainedXP;
+    db.set(player, `${skill}currentExp`, newXP);
 
-    if (currentXP >= getXPForLevel(level)) {
+    if (newXP >= getXPForLevel(level)) {
         db.set(player, `${skill}currentExp`, 0);
         db.set(player, skill, level + 1);
         player.sendMessage(
@@ -52,8 +63,20 @@ function handleSkillXP(player, skill, blocktype, table, toolXPKey) {
         );
     }
 
-    sendNotifyActionbar(player, drawXPBar(currentXP, getXPForLevel(level)));
+    sendNotifyActionbar(
+        player,
+        drawXPBar(`${skill}\n`, newXP, getXPForLevel(level))
+    );
 }
+
+function getCombatType(itemId, projectile) {
+    if (projectile?.typeId === "minecraft:arrow") return "arrow";
+    if (itemId?.includes("sword")) return "sword";
+    if (itemId?.includes("axe")) return "axe";
+    if (!itemId || itemId === "minecraft:air") return "undefined"; // unarmed
+    return null; // other tools like pickaxes, hoes, etc — no XP
+}
+    
 
 // world.afterEvents.entitySpawn.subscribe((event) => {
 //     console.warn("entity spawned");
@@ -63,9 +86,14 @@ world.afterEvents.itemUse.subscribe((event) => {
     const item = event.itemStack;
     const source = event.source;
     if (item.typeId === "minecraft:stick") {
-        pstats.forEach((item) => {
-            console.warn(db.get(source, item));
-        });
+        let text = ''
+        db.getAll(source).forEach(item=>{
+            text += `${item}\n`
+        })
+        source.sendMessage(text)
+    } if (item.typeId === "minecraft:torch") {
+        source.clearDynamicProperties()
+        console.warn("player db cleared")
     } else if (item.typeId === "minecraft:blaze_rod") {
         try {
             pstats.forEach((item) => {
@@ -99,9 +127,9 @@ world.beforeEvents.playerBreakBlock.subscribe((event) => {
     const itemhand = container.getItem(player.selectedSlotIndex);
 
     if (!itemhand) return;
-    for (const tool in skillHandlers) {
+    for (const tool in skillHandlers.gathering) {
         if (itemhand.typeId.includes(tool)) {
-            const { skill, table, notifyOnly } = skillHandlers[tool];
+            const { skill, table, notifyOnly } = skillHandlers.gathering[tool];
             const gainedXP = table[blocktype];
             if (!gainedXP) return;
 
@@ -118,60 +146,56 @@ world.beforeEvents.playerBreakBlock.subscribe((event) => {
 //combat
 world.afterEvents.entityDie.subscribe((event) => {
     const source = event.damageSource;
-    const target = event.deadEntity.typeId.replace("minecraft:", "");
-    if (source.damagingEntity instanceof Player) {
-        const player = source.damagingEntity;
-        const player2 = event.deadEntity;
-        /**
-         * @type Container
-         */
-        const container = player.getComponent("minecraft:inventory").container;
-        const itemhand = container.getItem(player.selectedSlotIndex);
+    const targetEntity = event.deadEntity;
+    const target = targetEntity?.typeId?.replace("minecraft:", "");
+    if (!(source?.damagingEntity instanceof Player)) return;
 
-        if (target in mobXP) {
-            console.warn(`score: ${mobXP[target]}`);
-            sendNotifyActionbar(player, `+1 Combat Point`);
-        }
+    const player = source.damagingEntity;
+    const container = player.getComponent("minecraft:inventory")?.container;
+    if (!container) return;
 
-        if (!source.damagingProjectile || !itemhand) return;
-        if (!(player2 instanceof Player)) return;
+    const itemhand = container.getItem(player.selectedSlotIndex);
+    const combatKey = getCombatType(
+        itemhand?.typeId,
+        source.damagingProjectile
+    );
+    const skillType = skillHandlers.combat[combatKey]?.skill;
 
-        if (source.damagingProjectile.typeId === "minecraft:arrow") {
-            console.warn("killed by arrow");
-        } else if (itemhand.typeId.includes("sword")) {
-            console.warn("killed by sword");
-        } else if (itemhand.typeId.includes("axe")) {
-            console.warn("killed by axe");
-        } else {
-            console.warn("killed by item");
-        }
+    if (!skillType || !target) return;
+
+    const baseXP = combatXPTable[`kill_${skillType}`] ?? 0;
+    const mobBonus = mobXP[target] ?? 0;
+    const totalXP = baseXP + mobBonus;
+
+    if (totalXP > 0) {
+        handleSkillXP(player, skillType, target, { [target]: totalXP });
     }
 });
 
 world.afterEvents.entityHurt.subscribe((event) => {
     const source = event.damageSource;
     const target = event.hurtEntity;
+    const targetType = target?.typeId?.replace("minecraft:", "");
+    if (!(source?.damagingEntity instanceof Player)) return;
 
-    if (source.damagingEntity instanceof Player) {
-        const player = source.damagingEntity;
-        const player2 = event.deadEntity;
-        /**
-         * @type Container
-         */
-        const container = player.getComponent("minecraft:inventory").container;
-        const itemhand = container.getItem(player.selectedSlotIndex);
+    const player = source.damagingEntity;
+    const container = player.getComponent("minecraft:inventory")?.container;
+    if (!container) return;
 
-        if (!source.damagingProjectile || !itemhand) return;
-        if (!(player2 instanceof Player)) return;
+    const itemhand = container.getItem(player.selectedSlotIndex);
+    const combatKey = getCombatType(
+        itemhand?.typeId,
+        source.damagingProjectile
+    );
+    const skillType = skillHandlers.combat[combatKey]?.skill;
 
-        if (source.damagingProjectile.typeId === "minecraft:arrow") {
-            console.warn("hit by arrow");
-        } else if (itemhand.typeId.includes("sword")) {
-            console.warn("hit by sword");
-        } else if (itemhand.typeId.includes("axe")) {
-            console.warn("hit by axe");
-        } else {
-            console.warn("hit by item");
-        }
+    if (!skillType || !targetType) return;
+
+    const baseXP = combatXPTable[`hit_${skillType}`] ?? 0;
+    const mobBonus = mobXP[targetType] ? Math.floor(mobXP[targetType] / 3) : 0;
+    const totalXP = baseXP + mobBonus;
+
+    if (totalXP > 0) {
+        handleSkillXP(player, skillType, targetType, { [targetType]: totalXP });
     }
 });

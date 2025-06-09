@@ -1,5 +1,6 @@
 export const pstats = [
     "havepStat",
+    //gathering
     "mining",
     "miningcurrentExp",
     "woodcutting",
@@ -7,7 +8,19 @@ export const pstats = [
     "herbalism",
     "herbalismcurrentExp",
     "excavation",
-    "excavationcurrentExp"
+    "excavationcurrentExp",
+
+    //combat
+    "combat",
+    "combatcurrentExp",
+    "sword",
+    "swordcurrentExp",
+    "axe",
+    "axecurrentExp",
+    "bow",
+    "bowcurrentExp",
+    "unarmed",
+    "unarmedcurrentExp"
 ];
 
 
