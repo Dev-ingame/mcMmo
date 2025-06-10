@@ -7,33 +7,47 @@ import { Database } from "./data";
 
 const db = new Database();
 
-const skillList = pstats.filter(s => !s.includes("currentExp") && s !== "havepStat");
+const skillList = pstats.filter(
+    (s) => !s.includes("currentExp") && s !== "havepStat"
+);
 
 /**
- * 
+ *
  * @param {Player} target
  */
 export function stat(target) {
     const form = new ActionFormData().title("Your Skill Stats");
 
-    skillList.forEach(skill => {
+    let totalPower = 0;
+    skillList.forEach((skill) => {
+        if (skill === "power") return
+        const level = db.get(target, skill) ?? 0;
+        totalPower += level;
+    });
+    db.set(target, "power", totalPower);
+
+    skillList.forEach((skill) => {
         const level = db.get(target, skill) ?? 0;
         const xp = db.get(target, `${skill}currentExp`) ?? 0;
         const needed = getXPForLevel(level);
+        if (skill == "power")
+            return form.body(`${capitalize("power")} - Lv ${level}`);
         form.button(`${capitalize(skill)} - Lv ${level} (${xp}/${needed})`);
     });
 
     form.button("Close");
 
-    form.show(target).then(res => {
-        const index = res.selection;
-        if (index === undefined || index >= skillList.length) return;
-        showSkillDetail(target, skillList[index]);
-    }).catch(() => {});
+    form.show(target)
+        .then((res) => {
+            const index = res.selection;
+            if (index === undefined || index >= skillList.length) return;
+            showSkillDetail(target, skillList[index]);
+        })
+        .catch(() => {});
 }
 
 /**
- * 
+ *
  * @param {Player} player
  * @param {string} skill
  */
@@ -45,12 +59,12 @@ function showSkillDetail(player, skill) {
     const passives = skillPassives[skill] ?? [];
 
     const unlocked = passives
-        .filter(p => level >= p.level)
-        .map(p => `✔ [Lv ${p.level}] ${p.desc}`);
+        .filter((p) => level >= p.level)
+        .map((p) => `✔ [Lv ${p.level}] ${p.desc}`);
 
     const locked = passives
-        .filter(p => level < p.level)
-        .map(p => `✘ [Lv ${p.level}] ${p.desc}`);
+        .filter((p) => level < p.level)
+        .map((p) => `✘ [Lv ${p.level}] ${p.desc}`);
 
     const body = [
         `Skill: ${capitalize(skill)}`,
@@ -58,10 +72,10 @@ function showSkillDetail(player, skill) {
         `XP: ${xp} / ${needed}`,
         "",
         "Unlocked Perks:",
-        ...unlocked.length ? unlocked : ["(None)"],
+        ...(unlocked.length ? unlocked : ["(None)"]),
         "",
         "Upcoming Perks:",
-        ...locked.length ? locked : ["(None)"]
+        ...(locked.length ? locked : ["(None)"]),
     ].join("\n");
 
     new ActionFormData()

@@ -6,7 +6,7 @@ export class Database {
      * @param {string} id
      * @param {any} value
      */
-    set(player, id, value) {
+    set(player, id, value = undefined) {
         return player.setDynamicProperty(id, value);
     }
 

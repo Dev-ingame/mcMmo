@@ -1,10 +1,11 @@
 export const pstats = [
     "havepStat",
+    "power",
     //gathering
     "mining",
     "miningcurrentExp",
-    "woodcutting",
-    "woodcuttingcurrentExp",
+    "lumberjack",
+    "lumberjackcurrentExp",
     "herbalism",
     "herbalismcurrentExp",
     "excavation",
@@ -27,7 +28,7 @@ export const pstats = [
 
 export {
     miningXPTable,
-    woodcuttingXPTable,
+    lumberjackXPTable,
     herbalismXPTable,
     excavationXPTable,
     fishingXPTable,
@@ -72,7 +73,7 @@ const miningXPTable = {
     obsidian: 15,
 };
 
-const woodcuttingXPTable = {
+const lumberjackXPTable = {
     // Overworld logs
     oak_log: 10,
     spruce_log: 12,
@@ -105,21 +106,21 @@ const excavationXPTable = {
     mycelium: 10,
     sand: 1,
     red_sand: 10,
-    gravel: 10,
+    gravel: 5,
     clay: 15,
-    soul_sand: 5,
-    soul_soil: 5,
+    soul_sand: 10,
+    soul_soil: 10,
     mud: 5,
     snow_block: 5,
     snow: 2,
 };
 const herbalismXPTable = {
     // Crops
-    wheat: 10,
-    carrots: 10,
-    potatoes: 10,
-    beetroots: 10,
-    nether_wart: 10,
+    wheat: 5,
+    carrots: 5,
+    potatoes: 5,
+    beetroots: 5,
+    nether_wart: 5,
 
     // Natural plants
     tall_grass: 2,
@@ -131,9 +132,9 @@ const herbalismXPTable = {
     glow_lichen: 2,
 
     // Mushrooms
-    red_mushroom: 5,
-    brown_mushroom: 5,
-    mushroom_stem: 5,
+    red_mushroom: 10,
+    brown_mushroom: 10,
+    mushroom_stem: 10,
 
     // Flowers
     dandelion: 3,

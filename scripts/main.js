@@ -9,7 +9,7 @@ import {
     miningXPTable,
     mobXP,
     pstats,
-    woodcuttingXPTable,
+    lumberjackXPTable,
 } from "./xpTables";
 import { Database } from "./data";
 
@@ -22,8 +22,8 @@ const skillHandlers = {
             table: miningXPTable,
         },
         axe: {
-            skill: "woodcutting",
-            table: woodcuttingXPTable,
+            skill: "lumberjack",
+            table: lumberjackXPTable,
         },
         shovel: {
             skill: "excavation",
@@ -43,11 +43,11 @@ const skillHandlers = {
     },
 };
 
-function handleSkillXP(player, skill, blocktype, table) {
+function handleSkillXP(player, skill, target, table) {
     const currentXP = db.get(player, `${skill}currentExp`) ?? 0;
     const level = db.get(player, skill) ?? 0;
 
-    const gainedXP = table[blocktype];
+    const gainedXP = table[target];
     if (typeof gainedXP !== "number") return;
 
     const newXP = currentXP + gainedXP;
@@ -74,13 +74,20 @@ function getCombatType(itemId, projectile) {
     if (itemId?.includes("sword")) return "sword";
     if (itemId?.includes("axe")) return "axe";
     if (!itemId || itemId === "minecraft:air") return "undefined"; // unarmed
-    return null; // other tools like pickaxes, hoes, etc — no XP
+    return null;
 }
-    
 
-// world.afterEvents.entitySpawn.subscribe((event) => {
-//     console.warn("entity spawned");
-// });
+world.afterEvents.playerSpawn.subscribe(event=>{
+    const player = event.player
+
+    console.warn(`${player.name}: spawned`)
+
+    if(db.has(player, 'havepStat')) return 
+    pstats.forEach(element => {
+        db.set(player, element, 0)
+    });
+})
+
 
 world.afterEvents.itemUse.subscribe((event) => {
     const item = event.itemStack;
@@ -105,10 +112,6 @@ world.afterEvents.itemUse.subscribe((event) => {
         }
     } else if (item.typeId === "minecraft:compass") {
         stat(source);
-        // sendNotifyActionbar(source, `${getXPForLevel(1)}`)
-        // for (let i = 0; i < 100; i++) {
-        //     source.sendMessage(`${getXPForLevel(i)}`);
-        // }
     }
 });
 
@@ -118,15 +121,12 @@ world.beforeEvents.playerBreakBlock.subscribe((event) => {
     const block = event.block;
     const player = event.player;
 
-    const blocktype = block.typeId.toLowerCase().replace("minecraft:", "");
-
-    /**
-     * @type Container
-     */
+    const blocktype = block?.typeId.replace("minecraft:", "");
     const container = player.getComponent("minecraft:inventory").container;
+    if (!container) return;
+
     const itemhand = container.getItem(player.selectedSlotIndex);
 
-    if (!itemhand) return;
     for (const tool in skillHandlers.gathering) {
         if (itemhand.typeId.includes(tool)) {
             const { skill, table, notifyOnly } = skillHandlers.gathering[tool];

@@ -34,7 +34,7 @@ export const skillPassives = {
         { level: 25, desc: "Chance to find buried loot" },
         { level: 45, desc: "Double clay/sand drop chance" }
     ],
-    woodcutting: [
+    lumberjack: [
         { level: 12, desc: "Break logs faster" },
         { level: 30, desc: "Chance to fell full trees" },
         { level: 50, desc: "Rare wood drops" }
