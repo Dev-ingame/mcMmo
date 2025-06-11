@@ -8,7 +8,7 @@ import { Database } from "./data";
 const db = new Database();
 
 const skillList = pstats.filter(
-    (s) => !s.includes("currentExp") && s !== "havepStat"
+    (s) => !s.includes("currentExp") && s !== "havepStat"  && s !== "power"
 );
 
 /**

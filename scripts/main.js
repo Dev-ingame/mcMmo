@@ -1,4 +1,12 @@
-import { Container, Player, world } from "@minecraft/server";
+import {
+    Container,
+    Player,
+    ScriptEventSource,
+    system,
+    world,
+    BlockPermutation,
+    World,
+} from "@minecraft/server";
 import { drawXPBar, getXPForLevel, sendNotifyActionbar } from "./utils";
 import { stat } from "./ui";
 import {
@@ -12,6 +20,7 @@ import {
     lumberjackXPTable,
 } from "./xpTables";
 import { Database } from "./data";
+import { config } from "./config";
 
 const db = new Database();
 
@@ -77,30 +86,33 @@ function getCombatType(itemId, projectile) {
     return null;
 }
 
-world.afterEvents.playerSpawn.subscribe(event=>{
-    const player = event.player
+world.afterEvents.playerSpawn.subscribe((event) => {
+    const player = event.player;
 
-    console.warn(`${player.name}: spawned`)
+    console.warn(`${player.name}: spawned`);
 
-    if(db.has(player, 'havepStat')) return 
-    pstats.forEach(element => {
-        db.set(player, element, 0)
+    if (db.has(player, "havepStat")) return;
+    pstats.forEach((element) => {
+        db.set(player, element, 0);
     });
-})
-
+});
 
 world.afterEvents.itemUse.subscribe((event) => {
     const item = event.itemStack;
     const source = event.source;
+    if (item.typeId === "minecraft:compass") stat(source);
+
+    if (!config.debug) return;
     if (item.typeId === "minecraft:stick") {
-        let text = ''
-        db.getAll(source).forEach(item=>{
-            text += `${item}\n`
-        })
-        source.sendMessage(text)
-    } if (item.typeId === "minecraft:torch") {
-        source.clearDynamicProperties()
-        console.warn("player db cleared")
+        let text = "";
+        db.getAll(source).forEach((item) => {
+            text += `${item}\n`;
+        });
+        source.sendMessage(text);
+    }
+    if (item.typeId === "minecraft:torch") {
+        source.clearDynamicProperties();
+        console.warn("player db cleared");
     } else if (item.typeId === "minecraft:blaze_rod") {
         try {
             pstats.forEach((item) => {
@@ -110,8 +122,6 @@ world.afterEvents.itemUse.subscribe((event) => {
         } catch (error) {
             console.warn(error);
         }
-    } else if (item.typeId === "minecraft:compass") {
-        stat(source);
     }
 });
 
@@ -126,7 +136,7 @@ world.beforeEvents.playerBreakBlock.subscribe((event) => {
     if (!container) return;
 
     const itemhand = container.getItem(player.selectedSlotIndex);
-
+    if (!itemhand) return;
     for (const tool in skillHandlers.gathering) {
         if (itemhand.typeId.includes(tool)) {
             const { skill, table, notifyOnly } = skillHandlers.gathering[tool];
@@ -198,4 +208,13 @@ world.afterEvents.entityHurt.subscribe((event) => {
     if (totalXP > 0) {
         handleSkillXP(player, skillType, targetType, { [targetType]: totalXP });
     }
+});
+
+
+// Hook into Script Event
+system.afterEvents.scriptEventReceive.subscribe((event) => {
+    const { id, sourceBlock, sourceEntity } = event;
+
+    // abilities 
+    // need to rewrite some stuff to make it work :)
 });

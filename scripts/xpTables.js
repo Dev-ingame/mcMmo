@@ -98,13 +98,13 @@ const lumberjackXPTable = {
 };
 
 const excavationXPTable = {
-    dirt: 1,
-    grass_block: 1,
+    dirt: 5,
+    grass_block: 5,
     coarse_dirt: 10,
     rooted_dirt: 10,
     podzol: 10,
     mycelium: 10,
-    sand: 1,
+    sand: 5,
     red_sand: 10,
     gravel: 5,
     clay: 15,
